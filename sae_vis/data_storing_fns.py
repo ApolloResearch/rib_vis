@@ -327,13 +327,14 @@ class SequenceMultiGroupData:
         Returns all the sequence groups' HTML, wrapped in grid-items (plus the JavaScript code at the end).
         '''
         # Get the HTML for all the sequence groups (the first one is the top activations, the rest are quantiles)
-        html_top, *html_quantiles = [
+        html_top, html_min, *html_quantiles = [
             sequences_group.get_html(vocab_dict=vocab_dict, hovertext=False)
             for sequences_group in self
         ]
 
         # Create a grid item for the first group, plus a grid item for every 3 quantiles, until we've used them all
         sequences_html = f"<div class='grid-item'>{html_top}</div>"
+        sequences_html += f"<div class='grid-item'>{html_min}</div>"
         while len(html_quantiles) > 0:
             L = min(3, len(html_quantiles))
             html_next, html_quantiles = html_quantiles[:L], html_quantiles[L:]

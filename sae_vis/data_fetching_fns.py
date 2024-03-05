@@ -432,12 +432,13 @@ def get_sequences_data(
     '''
     # ! (1) Find the tokens from each group
 
-    indices_dict = {
-        f"TOP ACTIVATIONS<br>MAX = {feat_acts.max():.3f}": k_largest_indices(feat_acts, k=fvp.first_group_size),
-    }
+    indices_dict = {}
+    indices_dict[f"TOP ACTIVATIONS<br>MAX = {feat_acts.max():.3f}"] = k_largest_indices(feat_acts, k=fvp.first_group_size)
+    indices_dict[f"MIN ACTIVATIONS<br>MIN = {feat_acts.min():.3f}"] = k_largest_indices(feat_acts, k=fvp.first_group_size, largest=False)
+
 
     if fvp.n_groups > 0:
-        quantiles = torch.linspace(0, feat_acts.max(), fvp.n_groups+1)
+        quantiles = torch.linspace(feat_acts.min(), feat_acts.max(), fvp.n_groups+1)
         for i in range(fvp.n_groups-1, -1, -1):
             lower, upper = quantiles[i:i+2]
             pct = ((feat_acts >= lower) & (feat_acts <= upper)).float().mean()
