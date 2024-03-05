@@ -66,6 +66,7 @@ class FeatureVisParams:
     minibatch_size_tokens: int = 64
 
     include_left_tables: bool = True
+    include_middle_data: bool = True
     rows_in_left_tables: int = 3
     buffer: tuple = (5, 5)
     n_groups: int = 10
@@ -684,7 +685,7 @@ class FeatureData:
     '''
     sequence_data: SequenceMultiGroupData
     left_tables_data: Optional[LeftTablesData]
-    middle_plots_data: MiddlePlotsData
+    middle_plots_data: Optional[MiddlePlotsData]
 
     feature_idx: int
     vocab_dict: Dict[int, str]
@@ -712,10 +713,10 @@ class FeatureData:
         # Get other HTML (split depending on whether we include the left tables or not)
         if self.fvp.include_left_tables:
             left_tables_html = self.left_tables_data.get_html()
-            middle_plots_data = self.middle_plots_data.get_html(self.vocab_dict)
+            middle_plots_data = self.middle_plots_data.get_html(self.vocab_dict) if self.middle_plots_data is not None else ""
         else:
             left_tables_html = ""
-            middle_plots_data = self.middle_plots_data.get_html(self.vocab_dict, compact=True)
+            middle_plots_data = self.middle_plots_data.get_html(self.vocab_dict, compact=True) if self.middle_plots_data is not None else ""
 
         # Get the CSS, and make appropriate edits to it
         css = CSS
