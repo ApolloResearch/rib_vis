@@ -183,10 +183,11 @@ class TopK:
         k: int,
         largest: bool = True,
         tensor_mask: Optional[Bool[Tensor, "..."]] = None,
+        dtype: torch.dtype = torch.float32,
     ):
         self.k = k
         self.largest = largest
-        self.values, self.indices = self.topk(tensor, tensor_mask)
+        self.values, self.indices = self.topk(tensor, tensor_mask, dtype=dtype)
     
     def __getitem__(self, item) -> "TopK":
         new_topk = TopK.__new__(TopK)
@@ -214,6 +215,7 @@ class TopK:
         self,
         tensor: Float[Tensor, "... d"],
         tensor_mask: Optional[Bool[Tensor, "..."]] = None,
+        dtype: torch.dtype = torch.float32,
     ) -> Tuple[Arr, Arr]:
         '''
         This is an efficient version of `torch.topk(..., dim=-1)`. It saves time by only doing the topk calculation over
@@ -232,9 +234,9 @@ class TopK:
 
         # Get an array of indices and values (with unimportant elements) which we'll index into using the topk object
         topk_shape = (*tensor_mask.shape, self.k)
-        topk_indices = torch.zeros(topk_shape).to(device).long() # shape [... k]
+        topk_indices = torch.zeros(topk_shape, dtype=dtype).to(device).long() # shape [... k]
         topk_indices[tensor_mask] = topk.indices
-        topk_values = torch.zeros(topk_shape).to(device) # shape [... k]
+        topk_values = torch.zeros(topk_shape, dtype=dtype).to(device) # shape [... k]
         topk_values[tensor_mask] = topk.values
 
         return utils.to_numpy(topk_values), utils.to_numpy(topk_indices)

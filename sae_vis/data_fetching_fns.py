@@ -400,6 +400,7 @@ def get_sequences_data(
     feature_resid_dir: Float[Tensor, "d_model"],
     W_U: Float[Tensor, "d_model d_vocab"],
     fvp: FeatureVisParams,
+    dtype: torch.dtype = torch.float32,
 ) -> SequenceMultiGroupData:
     '''
     This function returns the data which is used to create the sequence visualizations (i.e. the right-hand column of
@@ -472,8 +473,8 @@ def get_sequences_data(
     # Note, we use TopK's efficient function which takes in a mask, and ignores tokens where all feature acts are zero
     contribution_to_logprobs = orig_logits.log_softmax(dim=-1) - new_logits.log_softmax(dim=-1)
     acts_nonzero = feat_acts_group[:, :-1].abs() > 1e-5 # [group buf]
-    top5_contribution_to_logits = TopK(contribution_to_logprobs[:, :-1], k=5, largest=True, tensor_mask=acts_nonzero)
-    bottom5_contribution_to_logits = TopK(contribution_to_logprobs[:, :-1], k=5, largest=False, tensor_mask=acts_nonzero)
+    top5_contribution_to_logits = TopK(contribution_to_logprobs[:, :-1], k=5, largest=True, tensor_mask=acts_nonzero, dtype=dtype)
+    bottom5_contribution_to_logits = TopK(contribution_to_logprobs[:, :-1], k=5, largest=False, tensor_mask=acts_nonzero, dtype=dtype)
 
     # Get the change in loss (which is negative of change of logprobs for correct tokens)
     token_ids = tokens[indices_batch[:, 1:], indices_seq[:, 1:]] # [group seq-1]
