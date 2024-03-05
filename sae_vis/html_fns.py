@@ -1,4 +1,5 @@
 from matplotlib import colors
+import matplotlib as mpl
 import numpy as np
 from typing import List, Optional, Tuple, Literal
 from pathlib import Path
@@ -55,7 +56,7 @@ HISTOGRAM_LINE = """
 """
 
 
-BG_COLOR_MAP = colors.LinearSegmentedColormap.from_list("bg_color_map", ["white", "darkorange"])
+BG_COLOR_MAP = mpl.colormaps["RdBu"]
 
 
 def generate_tok_html(
@@ -153,8 +154,9 @@ def generate_seq_html(
 ):
     assert len(token_ids) == len(feat_acts) == len(contribution_to_loss), f"All input lists must be of the same length, not {len(token_ids)}, {len(feat_acts)}, {len(contribution_to_loss)}"
 
-    # ! Clip values in [0, 1] range (temporary)
-    bg_values = np.clip(feat_acts, 0, 1)
+    # Normalize colors to be between -1 and 1
+    min_max_feat_acts = max(abs(min(feat_acts)), abs(max(feat_acts)))
+    bg_values = list(np.array(feat_acts) / min_max_feat_acts)
     underline_values = np.clip(contribution_to_loss, -1, 1)
 
     classname = "seq" if (overflow_x is None) else "seq-break"
