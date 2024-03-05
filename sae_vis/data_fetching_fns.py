@@ -494,7 +494,7 @@ def get_sequences_data(
             SequenceData(
                 token_ids = token_ids[i].tolist(),
                 feat_acts = feat_acts_group[i, 1:].tolist(),
-                contribution_to_loss = contribution_to_loss[i].tolist() if logit_lens else torch.zeros_like(token_ids[i]),
+                contribution_to_loss = contribution_to_loss[i].tolist() if logit_lens else torch.zeros_like(token_ids[i]).tolist(),
                 top5_token_ids = top5_contribution_to_logits.indices[i].tolist() if logit_lens else None,
                 top5_logit_contributions = top5_contribution_to_logits.values[i].tolist() if logit_lens else None,
                 bottom5_token_ids = bottom5_contribution_to_logits.indices[i].tolist() if logit_lens else None,
