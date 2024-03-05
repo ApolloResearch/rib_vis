@@ -1,5 +1,6 @@
 from matplotlib import colors
 import matplotlib as mpl
+import matplotlib.pyplot as plt
 import numpy as np
 from typing import List, Optional, Tuple, Literal
 from pathlib import Path
@@ -56,8 +57,8 @@ HISTOGRAM_LINE = """
 """
 
 
-BG_COLOR_MAP = mpl.colormaps["RdBu"]
-
+RIGHT_COLOR_MAP = mpl.colormaps["RdBu"]
+MIDDLE_COLOR_MAP = colors.LinearSegmentedColormap.from_list("bg_color_map", ["white", "darkorange"])
 
 def generate_tok_html(
     vocab_dict: dict,
@@ -156,7 +157,8 @@ def generate_seq_html(
 
     # Normalize colors to be between -1 and 1
     min_max_feat_acts = max(abs(min(feat_acts)), abs(max(feat_acts)))
-    bg_values = list(np.array(feat_acts) / min_max_feat_acts)
+    norm = plt.Normalize(vmin=-2*min_max_feat_acts, vmax=2*min_max_feat_acts)
+    bg_values = feat_acts
     underline_values = np.clip(contribution_to_loss, -1, 1)
 
     classname = "seq" if (overflow_x is None) else "seq-break"
@@ -173,7 +175,7 @@ def generate_seq_html(
 
         # Get background color, which is {0: transparent, +1: darkorange}
         bg_val = bg_values[i]
-        bg_color = colors.rgb2hex(BG_COLOR_MAP(bg_val))
+        bg_color = colors.rgb2hex(RIGHT_COLOR_MAP(norm(bg_val)))
 
         # Get underline color, which is {-1: blue, 0: transparent, +1: red}
         underline_val = underline_values[i]
@@ -299,7 +301,7 @@ def generate_middle_plots_html(
     # Start off high, cause we want closer to orange than white for the left-most bars
     freq_bar_values = freq_hist_data_bar_values
     freq_bar_values_clipped = [(0.4 * max(freq_bar_values) + 0.6 * v) / max(freq_bar_values) for v in freq_bar_values]
-    freq_bar_colors = [colors.rgb2hex(BG_COLOR_MAP(v)) for v in freq_bar_values_clipped]
+    freq_bar_colors = [colors.rgb2hex(MIDDLE_COLOR_MAP(v)) for v in freq_bar_values_clipped]
 
     html_str = (
         html_str
