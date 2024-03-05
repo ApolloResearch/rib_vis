@@ -449,6 +449,7 @@ def get_sequences_data(
 
 
     # ! (2) & (3) Calculate the loss effect, and the most-affected logits
+    # Only do this if shapes match and Logit Lens is easily doable.
 
     # For each token index [group, seq], we want the seqpos slice [[group, seq-buffer[0]], ..., [group, seq+buffer[1]]]
     # We get one extra dimension at the start, because we need to see the effect on loss of the first token
@@ -457,29 +458,31 @@ def get_sequences_data(
     indices_full = torch.stack([indices_full[..., 0], indices_full[..., 1] + buffer_tensor], dim=-1)
     indices_batch, indices_seq = indices_full.unbind(dim=-1)
 
+    token_ids = tokens[indices_batch[:, 1:], indices_seq[:, 1:]] # [group seq-1]
+
     # Use indices_full to get the feature activations & resid post values for the sequences in question
     feat_acts_group = feat_acts[indices_batch, indices_seq]
     resid_post_group = resid_post[indices_batch, indices_seq]
 
-    # Get this feature's output vector, using an outer product over the feature activations for all tokens
-    resid_post_feature_effect = einops.einsum(feat_acts_group, feature_resid_dir, "group buf, d_model -> group buf d_model")
+    logit_lens = resid_post.shape[-1] == feature_resid_dir.shape[-1]
+    if logit_lens:
+        # Get this feature's output vector, using an outer product over the feature activations for all tokens
+        resid_post_feature_effect = einops.einsum(feat_acts_group, feature_resid_dir, "group buf, d_model -> group buf d_model")
 
-    # Get new ablated logits, and old ones
-    new_resid_post = resid_post_group - resid_post_feature_effect
-    new_logits = (new_resid_post / new_resid_post.std(dim=-1, keepdim=True)) @ W_U
-    orig_logits = (resid_post_group / resid_post_group.std(dim=-1, keepdim=True)) @ W_U
+        # Get new ablated logits, and old ones
+        new_resid_post = resid_post_group - resid_post_feature_effect
+        new_logits = (new_resid_post / new_resid_post.std(dim=-1, keepdim=True)) @ W_U
+        orig_logits = (resid_post_group / resid_post_group.std(dim=-1, keepdim=True)) @ W_U
 
-    # Get the top5 & bottom5 changes in logits
-    # Note, we use TopK's efficient function which takes in a mask, and ignores tokens where all feature acts are zero
-    contribution_to_logprobs = orig_logits.log_softmax(dim=-1) - new_logits.log_softmax(dim=-1)
-    acts_nonzero = feat_acts_group[:, :-1].abs() > 1e-5 # [group buf]
-    top5_contribution_to_logits = TopK(contribution_to_logprobs[:, :-1], k=5, largest=True, tensor_mask=acts_nonzero, dtype=dtype)
-    bottom5_contribution_to_logits = TopK(contribution_to_logprobs[:, :-1], k=5, largest=False, tensor_mask=acts_nonzero, dtype=dtype)
+        # Get the top5 & bottom5 changes in logits
+        # Note, we use TopK's efficient function which takes in a mask, and ignores tokens where all feature acts are zero
+        contribution_to_logprobs = orig_logits.log_softmax(dim=-1) - new_logits.log_softmax(dim=-1)
+        acts_nonzero = feat_acts_group[:, :-1].abs() > 1e-5 # [group buf]
+        top5_contribution_to_logits = TopK(contribution_to_logprobs[:, :-1], k=5, largest=True, tensor_mask=acts_nonzero, dtype=dtype)
+        bottom5_contribution_to_logits = TopK(contribution_to_logprobs[:, :-1], k=5, largest=False, tensor_mask=acts_nonzero, dtype=dtype)
 
-    # Get the change in loss (which is negative of change of logprobs for correct tokens)
-    token_ids = tokens[indices_batch[:, 1:], indices_seq[:, 1:]] # [group seq-1]
-    contribution_to_loss = eindex(-contribution_to_logprobs[:, :-1], token_ids, "group buf [group buf]")
-
+        # Get the change in loss (which is negative of change of logprobs for correct tokens)
+        contribution_to_loss = eindex(-contribution_to_logprobs[:, :-1], token_ids, "group buf [group buf]")
 
     # ! (4) Store the results in a SequenceMultiGroupData object
 
@@ -491,11 +494,11 @@ def get_sequences_data(
             SequenceData(
                 token_ids = token_ids[i].tolist(),
                 feat_acts = feat_acts_group[i, 1:].tolist(),
-                contribution_to_loss = contribution_to_loss[i].tolist(),
-                top5_token_ids = top5_contribution_to_logits.indices[i].tolist(),
-                top5_logit_contributions = top5_contribution_to_logits.values[i].tolist(),
-                bottom5_token_ids = bottom5_contribution_to_logits.indices[i].tolist(),
-                bottom5_logit_contributions = bottom5_contribution_to_logits.values[i].tolist(),
+                contribution_to_loss = contribution_to_loss[i].tolist() if logit_lens else torch.zeros_like(token_ids[i]),
+                top5_token_ids = top5_contribution_to_logits.indices[i].tolist() if logit_lens else None,
+                top5_logit_contributions = top5_contribution_to_logits.values[i].tolist() if logit_lens else None,
+                bottom5_token_ids = bottom5_contribution_to_logits.indices[i].tolist() if logit_lens else None,
+                bottom5_logit_contributions = bottom5_contribution_to_logits.values[i].tolist() if logit_lens else None,
             )
             for i in range(group_sizes_cumsum[group_idx], group_sizes_cumsum[group_idx+1])
         ]
