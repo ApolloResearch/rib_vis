@@ -505,7 +505,8 @@ def get_sequences_data(
         ]
         sequence_groups_data.append(SequenceGroupData(group_name, seq_data))
 
-    return SequenceMultiGroupData(sequence_groups_data)
+    # Pass feat_acts to correctly calculate min and max acts for colormap
+    return SequenceMultiGroupData(sequence_groups_data, feat_acts)
 
 
 

@@ -85,8 +85,8 @@ def generate_tok_html(
         HTML_TOKEN
         .replace("this_token", to_str_tokens(vocab_dict, this_token))
         .replace("this_id", f"{this_token}")
-        .replace("feat_activation", f"{feat_act:+.3f}")
-        .replace("feature_ablation", f"{contribution_to_loss:+.3f}")
+        .replace("feat_activation", f"{feat_act:+.2e}")
+        .replace("feature_ablation", f"{contribution_to_loss:+.2e}")
         .replace("font_weight", "bold" if is_bold else "normal")
         .replace("bg_color", bg_color)
         .replace("underline_color", underline_color)
@@ -153,11 +153,13 @@ def generate_seq_html(
     neg_val: Optional[List[List[float]]] = None,
     bold_idx: Optional[int] = None,
     overflow_x: Literal["break", None] = "break",
+    feat_acts_min: Optional[float] = None,
+    feat_acts_max: Optional[float] = None,
 ):
     assert len(token_ids) == len(feat_acts) == len(contribution_to_loss), f"All input lists must be of the same length, not {len(token_ids)}, {len(feat_acts)}, {len(contribution_to_loss)}"
 
     # Normalize colors to be between -1 and 1
-    min_max_feat_acts = max(abs(min(feat_acts)), abs(max(feat_acts)))
+    min_max_feat_acts = max(abs(feat_acts_min), abs(feat_acts_max))
     norm = plt.Normalize(vmin=-2*min_max_feat_acts, vmax=2*min_max_feat_acts)
     bg_values = feat_acts
     underline_values = np.clip(contribution_to_loss, -1, 1)

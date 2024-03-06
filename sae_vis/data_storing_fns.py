@@ -222,6 +222,8 @@ class SequenceData:
         hovertext: bool = True,
         bold_idx: Optional[int] = None,
         overflow_x: Literal["break", None] = None,
+        feat_acts_min: Optional[float] = None,
+        feat_acts_max: Optional[float] = None,
     ) -> str:
         '''
         hovertext determines whether we add hovertext to this HTML (yes if the sequence is on its own, no otherwise).
@@ -237,6 +239,8 @@ class SequenceData:
             pos_val = self.top5_logit_contributions,
             neg_val = self.bottom5_logit_contributions,
             overflow_x = overflow_x,
+            feat_acts_min = feat_acts_min,
+            feat_acts_max = feat_acts_max,
         )
         if hovertext:
             html_str += f"<script>{JS_HOVERTEXT_SCRIPT}</script>"
@@ -266,6 +270,8 @@ class SequenceGroupData:
         hovertext: bool = True,
         overflow_x: Literal["scroll", "hidden"] = "scroll",
         width: Optional[int] = 420,
+        feat_acts_min: Optional[float] = None,
+        feat_acts_max: Optional[float] = None,
     ):
         '''
         This creates a single group of sequences, i.e. title plus some number of vertically stacked sequences.
@@ -293,7 +299,7 @@ class SequenceGroupData:
         seqs = self.seq_data if group_size is None else self.seq_data[:group_size]
         for seq in seqs:
             # We return the HTML for seq without hovertext JavaScript (cause we only need to do hovertext once)
-            html_str += seq.get_html(vocab_dict=vocab_dict, hovertext=False)
+            html_str += seq.get_html(vocab_dict=vocab_dict, hovertext=False, feat_acts_min=feat_acts_min, feat_acts_max=feat_acts_max)
         
         html_str += "</div>"
 
@@ -312,8 +318,10 @@ class SequenceMultiGroupData:
 
     See the SequenceGroupData and SequenceData classes for more information on the arguments.
     '''
-    def __init__(self, seq_group_data: List[SequenceGroupData]):
+    def __init__(self, seq_group_data: List[SequenceGroupData], feat_acts):
         self.seq_group_data = seq_group_data
+        self.feat_acts_min = feat_acts.min()
+        self.feat_acts_max = feat_acts.max()
 
     def __getitem__(self, idx: int) -> SequenceGroupData:
         return self.seq_group_data[idx]
@@ -321,14 +329,14 @@ class SequenceMultiGroupData:
     def get_html(
         self,
         vocab_dict: Dict[int, str],
-        hovertext: bool = True
+        hovertext: bool = True,
     ) -> str:
         '''
         Returns all the sequence groups' HTML, wrapped in grid-items (plus the JavaScript code at the end).
         '''
         # Get the HTML for all the sequence groups (the first one is the top activations, the rest are quantiles)
         html_top, html_min, *html_quantiles = [
-            sequences_group.get_html(vocab_dict=vocab_dict, hovertext=False)
+            sequences_group.get_html(vocab_dict=vocab_dict, hovertext=False, feat_acts_min=self.feat_acts_min, feat_acts_max=self.feat_acts_max)
             for sequences_group in self
         ]
 
