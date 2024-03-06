@@ -84,6 +84,7 @@ def generate_tok_html(
     html_str = (
         HTML_TOKEN
         .replace("this_token", to_str_tokens(vocab_dict, this_token))
+        .replace("this_id", f"{this_token}")
         .replace("feat_activation", f"{feat_act:+.3f}")
         .replace("feature_ablation", f"{contribution_to_loss:+.3f}")
         .replace("font_weight", "bold" if is_bold else "normal")
