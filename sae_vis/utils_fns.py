@@ -409,7 +409,11 @@ if MAIN:
     values = torch.tensor([[0.0, 0.005, 0.02, 0.25], [0.75, 0.98, 0.995, 1.0]]).to(device)
     quantiles, precisions = qc.get_quantile(values)
 
-    for v, q, p in zip(values.flatten(), quantiles.flatten(), precisions.flatten()):
+    print("When 50% of data is 0, and 50% is Unif[0, 1]")
+    for v, q, p in zip(values[0], quantiles[0], precisions[0]):
+        print(f"Value: {v:.3f}, Precision: {p}, Quantile: {q:.{p-2}%}")
+    print("\nWhen 100% of data is Unif[0, 1]")
+    for v, q, p in zip(values[1], quantiles[1], precisions[1]):
         print(f"Value: {v:.3f}, Precision: {p}, Quantile: {q:.{p-2}%}")
 
 # %%
