@@ -9,10 +9,7 @@ setup(
         'einops',
         'datasets',
         'jaxtyping',
-        'eindex',
-    ],
-    dependency_links = [
-        'git+https://github.com/callummcdougall/eindex.git@a84f40ce5fabdc09c60036c9834d96808c897200#egg=eindex'
+        'eindex @ git+https://github.com/callummcdougall/eindex.git@a84f40ce5fabdc09c60036c9834d96808c897200#egg=eindex'
     ],
     include_package_data = True,
     author = 'Callum McDougall',
