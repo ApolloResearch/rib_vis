@@ -9,11 +9,11 @@ setup(
         'einops',
         'datasets',
         'jaxtyping',
-        # 'eindex',
+        'eindex',
     ],
-    # dependency_links = [
-    #     'git+https://github.com/callummcdougall/eindex.git#egg=eindex'  # Add the link with egg specification
-    # ],
+    dependency_links = [
+        'git+https://github.com/callummcdougall/eindex.git@a84f40ce5fabdc09c60036c9834d96808c897200#egg=eindex'
+    ],
     include_package_data = True,
     author = 'Callum McDougall',
     author_email = 'cal.s.mcdougall@gmail.com',
