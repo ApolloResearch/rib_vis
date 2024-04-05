@@ -713,10 +713,10 @@ def parse_activation_data(
     feature_acts: Float[Tensor, "batch n_ctx n_feats"],
     final_resid_acts: Float[Tensor, "batch n_ctx d_resid_final"],
     feature_resid_dirs: Float[Tensor, "n_feats d_resid_feat"],
-    feature_indices_list: list[int],
     W_U: Float[Tensor, "d_resid_final d_vocab"],
     vocab: dict[int, str] | AutoTokenizer,
     fvp: FeatureVisParams,
+    feature_indices_list: Optional[List[int]] = None,
 ) -> MultiFeatureData:
     """Convert generic activation data into a MultiFeatureData object, which can be used to create
     the feature-centric visualisation.
@@ -741,6 +741,9 @@ def parse_activation_data(
     middle_plots_data_dict: dict[int, MiddlePlotsData] = {}  # middle visualisation
     feature_dashboard_data: dict[int, FeatureData] = {}
 
+    if feature_indices_list is None:
+        feature_indices_list = list(range(feature_acts.shape[-1]))
+
     # Calculate all data for the right-hand visualisations, i.e. the sequences
     for i, feat in tqdm(
         enumerate(feature_indices_list),
@@ -760,13 +763,11 @@ def parse_activation_data(
 
     # Only calculate the middle visualisations if the architecture makes logit lens easy (we test
     # this by checking the shape -- in our case this implies that that layer allows for logit lens).
-    logit_lens = final_resid_acts.shape[-1] == feature_resid_dirs.shape[-1]
+    logit_lens = final_resid_acts.shape[-1] == feature_resid_dirs.shape[-1] and fvp.include_middle_data
     if logit_lens:
         # Get the logits of all features (i.e. the directions this feature writes to the logit output)
         logits = einops.einsum(
-            feature_resid_dirs,
-            W_U,
-            "feats d_model, d_model d_vocab -> feats d_vocab",
+            feature_resid_dirs, W_U, "feats d_model, d_model d_vocab -> feats d_vocab"
         )
         for i, (feat, logit) in enumerate(zip(feature_indices_list, logits, strict=True)):
             # Get data for logits (the histogram, and the table)
