@@ -86,7 +86,7 @@ def generate_tok_html(
         .replace("this_token", to_str_tokens(vocab_dict, this_token))
         .replace("this_id", f"{this_token}")
         .replace("feat_activation", f"{feat_act:+.2e}")
-        .replace("feature_ablation", f"{contribution_to_loss:+.2e}")
+        # .replace("feature_ablation", f"{contribution_to_loss:+.2e}")
         .replace("font_weight", "bold" if is_bold else "normal")
         .replace("bg_color", bg_color)
         .replace("underline_color", underline_color)
@@ -117,10 +117,10 @@ def generate_tok_html(
     neg_val.extend([0.0] * 5)
     
     # Make all the substitutions
-    html_str = re.sub("pos_str_(\d)", lambda m: pos_str[int(m.group(1))].replace(" ", "&nbsp;"), html_str)
-    html_str = re.sub("neg_str_(\d)", lambda m: neg_str[int(m.group(1))].replace(" ", "&nbsp;"), html_str)
-    html_str = re.sub("pos_val_(\d)", lambda m: f"{pos_val[int(m.group(1))]:+.3f}", html_str)
-    html_str = re.sub("neg_val_(\d)", lambda m: f"{neg_val[int(m.group(1))]:+.3f}", html_str)
+    html_str = re.sub(r"pos_str_(\d)", lambda m: pos_str[int(m.group(1))].replace(" ", "&nbsp;"), html_str)
+    html_str = re.sub(r"neg_str_(\d)", lambda m: neg_str[int(m.group(1))].replace(" ", "&nbsp;"), html_str)
+    html_str = re.sub(r"pos_val_(\d)", lambda m: f"{pos_val[int(m.group(1))]:+.3f}", html_str)
+    html_str = re.sub(r"neg_val_(\d)", lambda m: f"{neg_val[int(m.group(1))]:+.3f}", html_str)
 
     # If the effect on loss is nothing (because feature isn't active), replace the HTML output with smth saying this
     if is_empty:
@@ -245,7 +245,7 @@ def generate_left_tables_html(
         if mylist is None: 
             continue
         fn = lambda m: str(mylist[int(m.group(1))]) if myformat is None else format(mylist[int(m.group(1))], myformat)
-        html_output = re.sub(letter + "(\d)", fn, html_output, count=3)
+        html_output = re.sub(letter + r"(\d)", fn, html_output, count=3)
     
     return html_output
     
@@ -297,7 +297,7 @@ def generate_middle_plots_html(
             fn = lambda m: format(mylist[int(m.group(1))], "+.2f")
         elif letter == "C":
             fn = lambda m: str(mylist[int(m.group(1))])
-        html_str = re.sub(letter + "(\d)", fn, html_str, count=10)
+        html_str = re.sub(letter + r"(\d)", fn, html_str, count=10)
 
     # ! Populate the HTML with the activations density histogram data & the logits histogram data
 

@@ -344,7 +344,8 @@ class SequenceMultiGroupData:
         sequences_html = f"<div class='grid-item'>{html_top}</div>"
         sequences_html += f"<div class='grid-item'>{html_min}</div>"
         while len(html_quantiles) > 0:
-            L = min(3, len(html_quantiles))
+            # Change L to decide how many quantile blocks per column
+            L = min(2, len(html_quantiles))
             html_next, html_quantiles = html_quantiles[:L], html_quantiles[L:]
             sequences_html += f"<div class='grid-item'>{''.join(html_next)}</div>"
 
